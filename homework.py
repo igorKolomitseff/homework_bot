@@ -36,7 +36,7 @@ logging.basicConfig(
 )
 
 
-def check_tokens() -> bool:
+def check_tokens() -> None:
     """Проверяет доступность переменных окружения."""
     logging.debug('Начало проверки доступности переменных окружения.')
     required_tokens = {
@@ -47,9 +47,9 @@ def check_tokens() -> bool:
     for token, value in required_tokens.items():
         if value is None:
             logging.critical(f'Отсутствует обязательная переменная {token}.')
-            return False
+            logging.debug('Программа принудительно остановлена.')
+            sys.exit()
     logging.debug('Все необходимые переменные окружения доступны.')
-    return True
 
 
 def send_message(bot: TeleBot, message: str) -> None:
@@ -149,8 +149,7 @@ def parse_status(homework: dict) -> str:
 
 def main():
     """Основная логика работы бота."""
-    if not check_tokens():
-        sys.exit()
+    check_tokens()
     bot = TeleBot(token=TELEGRAM_TOKEN)
     timestamp = int(time.time())
     last_status = ''
@@ -166,16 +165,16 @@ def main():
             message = parse_status(homeworks[0])
             if message != last_status:
                 logging.debug('Статус домашней работы изменился.')
-                last_status = message
                 send_message(bot, message)
+                last_status = message
             else:
                 logging.debug('Статус домашней работы не изменился.')
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logging.error(message)
             if message != last_error:
-                last_error = message
                 send_message(bot, message)
+                last_error = message
         finally:
             time.sleep(RETRY_PERIOD)
 
