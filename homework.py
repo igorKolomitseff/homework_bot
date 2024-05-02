@@ -86,7 +86,7 @@ def get_api_answer(timestamp: int) -> dict:
             'Запрос к эндпоинту API-сервиса Практикум Домашка выполнен.'
         )
         return response.json()
-    except requests.exceptions.RequestException as error:
+    except requests.RequestException as error:
         error_message = (
             'Эндпоит сервиса Практикум Домашка недоступен. '
             f'Код ответа API: {response.status_code}. {error}'
