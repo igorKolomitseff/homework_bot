@@ -6,7 +6,8 @@ import sys
 import time
 
 from exceptions import (
-    SendMessageError, StatusCodeIsNot200Error, UnavailableAPIError)
+    SendMessageError, StatusCodeIsNot200Error, UnavailableAPIError
+)
 
 from dotenv import load_dotenv
 from telebot import TeleBot
