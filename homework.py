@@ -46,8 +46,10 @@ def check_tokens() -> None:
     }
     for token, value in required_tokens.items():
         if value is None:
-            logging.critical(f'Отсутствует обязательная переменная {token}.')
-            logging.debug('Программа принудительно остановлена.')
+            logging.critical(
+                f'Отсутствует обязательная переменная {token}. '
+                'Программа принудительно остановлена.'
+            )
             sys.exit()
     logging.debug('Все необходимые переменные окружения доступны.')
 
