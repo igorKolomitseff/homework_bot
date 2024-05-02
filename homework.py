@@ -1,9 +1,9 @@
 from http import HTTPStatus
 import logging
-import requests
-import time
 import os
+import requests
 import sys
+import time
 
 from exceptions import (
     SendMessageError, StatusCodeIsNot200Error, UnavailableAPIError)
