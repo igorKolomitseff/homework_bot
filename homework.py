@@ -29,7 +29,6 @@ HOMEWORK_VERDICTS = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
-
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s %(levelname)s %(message)s',
@@ -114,9 +113,7 @@ def check_response(response: dict) -> None:
             raise KeyError(error_message)
     homeworks = response.get('homeworks')
     if not isinstance(homeworks, list):
-        error_message = (
-            'Ответ API с ключом homeworks не содержит список.'
-        )
+        error_message = ('Ответ API с ключом homeworks не содержит список.')
         logging.error(error_message)
         raise TypeError(error_message)
     logging.debug('Весь ответ API соответствует документации.')
