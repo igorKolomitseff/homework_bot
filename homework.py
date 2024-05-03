@@ -5,12 +5,12 @@ import requests
 import sys
 import time
 
+from dotenv import load_dotenv
+from telebot import TeleBot
+
 from exceptions import (
     SendMessageError, StatusCodeIsNot200Error, UnavailableAPIError
 )
-
-from dotenv import load_dotenv
-from telebot import TeleBot
 
 
 load_dotenv()
@@ -28,12 +28,6 @@ HOMEWORK_VERDICTS = {
     'reviewing': 'Работа взята на проверку ревьюером.',
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
-
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s %(levelname)s %(message)s',
-    handlers=[logging.StreamHandler(stream=sys.stdout)]
-)
 
 
 def check_tokens() -> None:
@@ -182,4 +176,18 @@ def main():
 
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format=(
+            '%(asctime)s - %(levelname)s - %(funcName)s - '
+            'строка № %(lineno)d - %(message)s'),
+        handlers=[
+            logging.StreamHandler(stream=sys.stdout),
+            logging.FileHandler(
+                filename=__file__ + '.log',
+                mode='w',
+                encoding='utf-8'
+            )
+        ]
+    )
     main()
