@@ -148,10 +148,7 @@ def parse_status(homework: dict) -> str:
 
 def main():
     """Основная логика работы бота."""
-    try:
-        check_tokens()
-    except ValueError:
-        sys.exit()
+    check_tokens()
     bot = TeleBot(token=TELEGRAM_TOKEN)
     timestamp = int(time.time())
     last_status = ''
