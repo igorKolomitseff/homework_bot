@@ -1,10 +1,10 @@
 from http import HTTPStatus
 import logging
 import os
-import requests
 import sys
 import time
 
+import requests
 from dotenv import load_dotenv
 from telebot import TeleBot
 
@@ -180,7 +180,8 @@ if __name__ == '__main__':
         level=logging.DEBUG,
         format=(
             '%(asctime)s - %(levelname)s - %(funcName)s - '
-            'строка № %(lineno)d - %(message)s'),
+            'строка № %(lineno)d - %(message)s'
+        ),
         handlers=[
             logging.StreamHandler(stream=sys.stdout),
             logging.FileHandler(
