@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from telebot import TeleBot
 
 from exceptions import (
-    SendMessageError, StatusCodeIsNot200Error, UnavailableAPIError
+    StatusCodeIsNot200Error, UnavailableAPIError
 )
 
 
@@ -34,6 +34,14 @@ NOT_TOKENS_ERROR = (
     'Отсутствуют обязательные переменные окружения: {tokens}.\n'
     'Программа принудительно остановлена.'
 )
+SEND_MESSAGE_SUCCESS = (
+    'Сообщение успешно отправлено в Telegram.\n'
+    'Текст сообщения: {message}'
+)
+SEND_MESSAGE_ERROR = (
+    'Сообщение отправить в Telegram не удалось.\n'
+    'Текст сообщения: {message}'
+)
 
 
 def check_tokens() -> None:
@@ -50,11 +58,9 @@ def send_message(bot: TeleBot, message: str) -> None:
     """Отправляет сообщение в Telegram-чат."""
     try:
         bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
-        logging.debug('Сообщение в Telegram успешно отправлено: ')
-    except Exception as error:
-        error_message = f'Не удалось отправить сообщение в Telegram. {error}'
-        logging.error(error_message)
-        raise SendMessageError(error_message)
+        logging.debug(SEND_MESSAGE_SUCCESS.format(message=message))
+    except Exception:
+        logging.exception(SEND_MESSAGE_ERROR.format(message=message))
 
 
 def get_api_answer(timestamp: int) -> dict:
