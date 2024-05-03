@@ -29,23 +29,25 @@ HOMEWORK_VERDICTS = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
+TOKENS = ('PRACTICUM_TOKEN', 'TELEGRAM_TOKEN', 'TELEGRAM_CHAT_ID')
+NOT_TOKENS_ERROR = (
+    'Отсутствуют обязательные переменные окружения: {tokens}.\n'
+    'Программа принудительно остановлена.'
+)
+START_CHECK_TOKENS = 'Начало проверки доступности переменных окружения.'
+SUCCESS_CHECK_TOKENS = 'Все необходимые переменные окружения доступны.'
+
 
 def check_tokens() -> None:
     """Проверяет доступность переменных окружения."""
-    logging.debug('Начало проверки доступности переменных окружения.')
-    required_tokens = {
-        'PRACTICUM_TOKEN': PRACTICUM_TOKEN,
-        'TELEGRAM_TOKEN': TELEGRAM_TOKEN,
-        'TELEGRAM_CHAT_ID': TELEGRAM_CHAT_ID
-    }
-    for token, value in required_tokens.items():
-        if value is None:
-            logging.critical(
-                f'Отсутствует обязательная переменная {token}. '
-                'Программа принудительно остановлена.'
-            )
-            sys.exit()
-    logging.debug('Все необходимые переменные окружения доступны.')
+    logging.debug(START_CHECK_TOKENS)
+    missing_tokens = ', '.join(
+        token for token in TOKENS if not globals()[token]
+    )
+    if missing_tokens:
+        logging.critical(NOT_TOKENS_ERROR.format(tokens=missing_tokens))
+        raise ValueError(NOT_TOKENS_ERROR.format(tokens=missing_tokens))
+    logging.debug(SUCCESS_CHECK_TOKENS)
 
 
 def send_message(bot: TeleBot, message: str) -> None:
@@ -145,7 +147,10 @@ def parse_status(homework: dict) -> str:
 
 def main():
     """Основная логика работы бота."""
-    check_tokens()
+    try:
+        check_tokens()
+    except ValueError:
+        sys.exit()
     bot = TeleBot(token=TELEGRAM_TOKEN)
     timestamp = int(time.time())
     last_status = ''
@@ -179,7 +184,7 @@ if __name__ == '__main__':
     logging.basicConfig(
         level=logging.DEBUG,
         format=(
-            '%(asctime)s - %(levelname)s - %(funcName)s - '
+            '%(asctime)s %(levelname)s: %(funcName)s, '
             'строка № %(lineno)d - %(message)s'
         ),
         handlers=[
