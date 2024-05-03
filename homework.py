@@ -34,28 +34,23 @@ NOT_TOKENS_ERROR = (
     'Отсутствуют обязательные переменные окружения: {tokens}.\n'
     'Программа принудительно остановлена.'
 )
-START_CHECK_TOKENS = 'Начало проверки доступности переменных окружения.'
-SUCCESS_CHECK_TOKENS = 'Все необходимые переменные окружения доступны.'
 
 
 def check_tokens() -> None:
     """Проверяет доступность переменных окружения."""
-    logging.debug(START_CHECK_TOKENS)
     missing_tokens = ', '.join(
         token for token in TOKENS if not globals()[token]
     )
     if missing_tokens:
         logging.critical(NOT_TOKENS_ERROR.format(tokens=missing_tokens))
         raise ValueError(NOT_TOKENS_ERROR.format(tokens=missing_tokens))
-    logging.debug(SUCCESS_CHECK_TOKENS)
 
 
 def send_message(bot: TeleBot, message: str) -> None:
     """Отправляет сообщение в Telegram-чат."""
     try:
-        logging.debug(f'Попытка отправки сообщение в Telegram: {message}.')
         bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
-        logging.debug('Сообщение в Telegram успешно отправлено.')
+        logging.debug('Сообщение в Telegram успешно отправлено: ')
     except Exception as error:
         error_message = f'Не удалось отправить сообщение в Telegram. {error}'
         logging.error(error_message)
