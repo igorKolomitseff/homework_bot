@@ -87,6 +87,8 @@ NEW_STATUS = (
     'Изменился статус проверки работы "{name}". '
     '{verdict}'
 )
+NOT_NEW_STATUS = 'Статус домашней работы не изменился.'
+MAIN_ERROR_MESSAGE = 'Сбой в работе программы: {error}'
 
 
 def check_tokens() -> None:
@@ -167,7 +169,7 @@ def parse_status(homework: dict) -> str:
     )
 
 
-def main():
+def main() -> None:
     """Основная логика работы бота."""
     check_tokens()
     bot = TeleBot(token=TELEGRAM_TOKEN)
@@ -179,19 +181,19 @@ def main():
             response = get_api_answer(timestamp)
             check_response(response)
             homeworks = response.get('homeworks')
+            timestamp = response.get('current_date', timestamp)
             if not homeworks:
-                logging.debug('Статус домашней работы не изменился.')
+                logging.debug(NOT_NEW_STATUS)
                 continue
             message = parse_status(homeworks[0])
             if message != last_status:
-                logging.debug('Статус домашней работы изменился.')
                 send_message(bot, message)
                 last_status = message
             else:
-                logging.debug('Статус домашней работы не изменился.')
+                logging.debug(NOT_NEW_STATUS)
         except Exception as error:
-            message = f'Сбой в работе программы: {error}'
-            logging.error(message)
+            message = MAIN_ERROR_MESSAGE.format(error=error)
+            logging.exception(MAIN_ERROR_MESSAGE.format(error=error))
             if message != last_error:
                 send_message(bot, message)
                 last_error = message
