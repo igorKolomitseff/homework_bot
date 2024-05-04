@@ -76,6 +76,17 @@ HOMEWORKS_IS_NOT_LIST_ERROR = (
     'Ключ homeworks не содержит список.\n'
     'Полученный типа данных: {data_type}.'
 )
+REQUIRED_KEYS_IN_HOMEWORK = ('homework_name', 'status')
+KEY_IS_NOT_IN_HOMEWORK_ERROR = (
+    'В словаре homework отсутствует обязательный ключ: {key}.'
+)
+UNKNOWN_STATUS_ERROR = (
+    'Неизвестное значение статуса домашней работы: {status}.'
+)
+NEW_STATUS = (
+    'Изменился статус проверки работы "{name}". '
+    '{verdict}'
+)
 
 
 def check_tokens() -> None:
@@ -144,29 +155,15 @@ def check_response(response: dict) -> None:
 
 def parse_status(homework: dict) -> str:
     """Извлекает статус домашней работы."""
-    logging.debug('Начало извлечения статуса домашней работы.')
-    homework_name = homework.get('homework_name')
-    homework_status = homework.get('status')
-    homework_keys = {
-        'homework_name': homework_name,
-        'status': homework_status
-    }
-    for key, value in homework_keys.items():
-        if value is None:
-            error_message = (
-                f'В словаре homework отсутствует обязательный ключ: {key}.'
-            )
-            logging.error(error_message)
-            raise KeyError(error_message)
-    if homework_status not in HOMEWORK_VERDICTS:
-        error_message = (
-            f'Неизвестное значение статуса домашней работы: {homework_status}'
-        )
-        logging.error(error_message)
-        raise ValueError(error_message)
-    return (
-        f'Изменился статус проверки работы "{homework_name}". '
-        f'{HOMEWORK_VERDICTS.get(homework_status)}'
+    for key in REQUIRED_KEYS_IN_HOMEWORK:
+        if key not in homework:
+            raise KeyError(KEY_IS_NOT_IN_HOMEWORK_ERROR.format(key=key))
+    status = homework.get('status')
+    if status not in HOMEWORK_VERDICTS:
+        raise ValueError(UNKNOWN_STATUS_ERROR.format(status=status))
+    return NEW_STATUS.format(
+        name=homework['homework_name'],
+        verdict=HOMEWORK_VERDICTS[status]
     )
 
 
