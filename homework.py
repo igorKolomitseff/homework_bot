@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from telebot import TeleBot
 
 from exceptions import (
-    StatusCodeIsNot200Error, UnavailableAPIError
+    StatusCodeIsNot200Error
 )
 
 
@@ -42,6 +42,29 @@ SEND_MESSAGE_ERROR = (
     'Сообщение отправить в Telegram не удалось.\n'
     'Текст сообщения: {message}'
 )
+REQUEST_ERROR = (
+    'Ошибка запроса к API-сервису Практикум Домашка.\n'
+    'url: {url}.\n'
+    'HEADERS: {headers}.\n'
+    'params: {params}.\n'
+    'error: {error}'
+)
+STATUS_NOT_OK_ERROR = (
+    'Код ответа от API-сервиса Практикум Домашка не 200.\n'
+    'Код ответа: {status_code}.\n'
+    'url: {url}.\n'
+    'HEADERS: {headers}.\n'
+    'params: {params}.\n'
+)
+ERROR_KEYS_IN_RESPONSE = ('code', 'error')
+RESPONSE_HAS_ERROR_KEY_ERROR = (
+    'Ответ API содержит ошибку.\n'
+    'url: {url}.\n'
+    'HEADERS: {headers}.\n'
+    'params: {params}.\n'
+    'ключ: {key}.\n'
+    'error: {error}'
+)
 
 
 def check_tokens() -> None:
@@ -65,33 +88,32 @@ def send_message(bot: TeleBot, message: str) -> None:
 
 def get_api_answer(timestamp: int) -> dict:
     """Делает запрос к эндпоинту API-сервиса Практикум Домашка."""
+    request_parameters = dict(
+        url=ENDPOINT,
+        headers=HEADERS,
+        params={'from_date': timestamp}
+    )
     try:
-        logging.debug(
-            'Выполняется запрос к эндпоинту API-сервиса Практикум Домашка.'
-        )
-        response = requests.get(
-            url=ENDPOINT,
-            headers=HEADERS,
-            params={'from_date': timestamp},
-        )
-        if response.status_code != HTTPStatus.OK:
-            error_message = (
-                'Ошибка запроса к API-сервису Практикум Домашка. '
-                f'Код ответа API: {response.status_code}'
-            )
-            logging.error(error_message)
-            raise StatusCodeIsNot200Error(error_message)
-        logging.debug(
-            'Запрос к эндпоинту API-сервиса Практикум Домашка выполнен.'
-        )
-        return response.json()
+        response = requests.get(**request_parameters)
     except requests.RequestException as error:
-        error_message = (
-            'Эндпоит сервиса Практикум Домашка недоступен. '
-            f'Код ответа API: {response.status_code}. {error}'
-        )
-        logging.error(error_message)
-        raise UnavailableAPIError(error_message)
+        raise ConnectionError(REQUEST_ERROR.format(
+            error=error,
+            **request_parameters
+        ))
+    if response.status_code != HTTPStatus.OK:
+        raise StatusCodeIsNot200Error(STATUS_NOT_OK_ERROR.format(
+            status_code=response.status_code,
+            **request_parameters
+        ))
+    response = response.json()
+    for key in ERROR_KEYS_IN_RESPONSE:
+        if key in response:
+            raise ValueError(RESPONSE_HAS_ERROR_KEY_ERROR.format(
+                key=key,
+                error=response.get(key),
+                **request_parameters
+            ))
+    return response
 
 
 def check_response(response: dict) -> None:
