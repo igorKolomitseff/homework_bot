@@ -65,6 +65,17 @@ RESPONSE_HAS_ERROR_KEY_ERROR = (
     'ключ: {key}.\n'
     'error: {error}'
 )
+RESPONSE_IS_NOT_DICT_ERROR = (
+    'Ответ API не является словарем.\n'
+    'Полученный типа данных: {data_type}.'
+)
+KEY_IS_NOT_IN_RESPONSE_ERROR = (
+    'Отсутствует обязательный элемент в ответе API: homeworks.'
+)
+HOMEWORKS_IS_NOT_LIST_ERROR = (
+    'Ключ homeworks не содержит список.\n'
+    'Полученный типа данных: {data_type}.'
+)
 
 
 def check_tokens() -> None:
@@ -118,26 +129,17 @@ def get_api_answer(timestamp: int) -> dict:
 
 def check_response(response: dict) -> None:
     """Проверяет ответ API на соответствие документации."""
-    logging.debug('Начало проверки ответа API на соответствие документации.')
     if not isinstance(response, dict):
-        error_message = (
-            'Ответ API не является словарем.'
-        )
-        logging.error(error_message)
-        raise TypeError(error_message)
-    for key in ('current_date', 'homeworks'):
-        if key not in response:
-            error_message = (
-                f'Отсутствует обязательный элемент в ответе API: {key}.'
-            )
-            logging.error(error_message)
-            raise KeyError(error_message)
-    homeworks = response.get('homeworks')
+        raise TypeError(RESPONSE_IS_NOT_DICT_ERROR.format(
+            data_type=type(response)
+        ))
+    if 'homeworks' not in response:
+        raise KeyError(KEY_IS_NOT_IN_RESPONSE_ERROR)
+    homeworks = response['homeworks']
     if not isinstance(homeworks, list):
-        error_message = ('Ответ API с ключом homeworks не содержит список.')
-        logging.error(error_message)
-        raise TypeError(error_message)
-    logging.debug('Весь ответ API соответствует документации.')
+        raise TypeError(HOMEWORKS_IS_NOT_LIST_ERROR.format(
+            data_type=type(homeworks)
+        ))
 
 
 def parse_status(homework: dict) -> str:
