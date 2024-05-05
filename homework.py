@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from telebot import TeleBot
 
 from exceptions import (
-    StatusCodeIsNot200Error
+    ErrorKeyInResponseError, NotTokensError, StatusCodeIsNot200Error
 )
 
 
@@ -45,22 +45,22 @@ SEND_MESSAGE_ERROR = (
 REQUEST_ERROR = (
     'Ошибка запроса к API-сервису Практикум Домашка.\n'
     'url: {url}.\n'
-    'HEADERS: {headers}.\n'
+    'headers: {headers}.\n'
     'params: {params}.\n'
     'error: {error}'
 )
-STATUS_NOT_OK_ERROR = (
+STATUS_IS_NOT_OK_ERROR = (
     'Код ответа от API-сервиса Практикум Домашка не 200.\n'
     'Код ответа: {status_code}.\n'
     'url: {url}.\n'
-    'HEADERS: {headers}.\n'
+    'headers: {headers}.\n'
     'params: {params}.\n'
 )
 ERROR_KEYS_IN_RESPONSE = ('code', 'error')
 RESPONSE_HAS_ERROR_KEY_ERROR = (
     'Ответ API содержит ошибку.\n'
     'url: {url}.\n'
-    'HEADERS: {headers}.\n'
+    'headers: {headers}.\n'
     'params: {params}.\n'
     'ключ: {key}.\n'
     'error: {error}'
@@ -70,15 +70,15 @@ RESPONSE_IS_NOT_DICT_ERROR = (
     'Полученный типа данных: {data_type}.'
 )
 KEY_IS_NOT_IN_RESPONSE_ERROR = (
-    'Отсутствует обязательный элемент в ответе API: homeworks.'
+    'Отсутствует обязательный элемент в ответе API: ключ homeworks.'
 )
 HOMEWORKS_IS_NOT_LIST_ERROR = (
     'Ключ homeworks не содержит список.\n'
     'Полученный типа данных: {data_type}.'
 )
 REQUIRED_KEYS_IN_HOMEWORK = ('homework_name', 'status')
-KEY_IS_NOT_IN_HOMEWORK_ERROR = (
-    'В словаре homework отсутствует обязательный ключ: {key}.'
+KEYS_IS_NOT_IN_HOMEWORK_ERROR = (
+    'В словаре homework отсутствуют обязательные ключи: {keys}.'
 )
 UNKNOWN_STATUS_ERROR = (
     'Неизвестное значение статуса домашней работы: {status}.'
@@ -87,8 +87,9 @@ NEW_STATUS = (
     'Изменился статус проверки работы "{name}". '
     '{verdict}'
 )
-NOT_NEW_STATUS = 'Статус домашней работы не изменился.'
+NO_NEW_STATUS = 'Статус домашней работы не изменился.'
 MAIN_ERROR_MESSAGE = 'Сбой в работе программы: {error}'
+NOT_NEW_ERROR_MESSAGE = 'При новом запросе ошибка не изменилась'
 
 
 def check_tokens() -> None:
@@ -98,7 +99,7 @@ def check_tokens() -> None:
     )
     if missing_tokens:
         logging.critical(NOT_TOKENS_ERROR.format(tokens=missing_tokens))
-        raise ValueError(NOT_TOKENS_ERROR.format(tokens=missing_tokens))
+        raise NotTokensError(NOT_TOKENS_ERROR.format(tokens=missing_tokens))
 
 
 def send_message(bot: TeleBot, message: str) -> None:
@@ -125,14 +126,14 @@ def get_api_answer(timestamp: int) -> dict:
             **request_parameters
         ))
     if response.status_code != HTTPStatus.OK:
-        raise StatusCodeIsNot200Error(STATUS_NOT_OK_ERROR.format(
+        raise StatusCodeIsNot200Error(STATUS_IS_NOT_OK_ERROR.format(
             status_code=response.status_code,
             **request_parameters
         ))
     response = response.json()
     for key in ERROR_KEYS_IN_RESPONSE:
         if key in response:
-            raise ValueError(RESPONSE_HAS_ERROR_KEY_ERROR.format(
+            raise ErrorKeyInResponseError(RESPONSE_HAS_ERROR_KEY_ERROR.format(
                 key=key,
                 error=response.get(key),
                 **request_parameters
@@ -157,10 +158,12 @@ def check_response(response: dict) -> None:
 
 def parse_status(homework: dict) -> str:
     """Извлекает статус домашней работы."""
-    for key in REQUIRED_KEYS_IN_HOMEWORK:
-        if key not in homework:
-            raise KeyError(KEY_IS_NOT_IN_HOMEWORK_ERROR.format(key=key))
-    status = homework.get('status')
+    missing_keys = ', '.join(
+        key for key in REQUIRED_KEYS_IN_HOMEWORK if key not in homework
+    )
+    if missing_keys:
+        raise KeyError(KEYS_IS_NOT_IN_HOMEWORK_ERROR.format(keys=missing_keys))
+    status = homework['status']
     if status not in HOMEWORK_VERDICTS:
         raise ValueError(UNKNOWN_STATUS_ERROR.format(status=status))
     return NEW_STATUS.format(
@@ -183,20 +186,22 @@ def main() -> None:
             homeworks = response.get('homeworks')
             timestamp = response.get('current_date', timestamp)
             if not homeworks:
-                logging.debug(NOT_NEW_STATUS)
+                logging.debug(NO_NEW_STATUS)
                 continue
             message = parse_status(homeworks[0])
             if message != last_status:
                 send_message(bot, message)
                 last_status = message
             else:
-                logging.debug(NOT_NEW_STATUS)
+                logging.debug(NO_NEW_STATUS)
         except Exception as error:
             message = MAIN_ERROR_MESSAGE.format(error=error)
             logging.exception(MAIN_ERROR_MESSAGE.format(error=error))
             if message != last_error:
                 send_message(bot, message)
                 last_error = message
+            else:
+                logging.debug(NOT_NEW_ERROR_MESSAGE)
         finally:
             time.sleep(RETRY_PERIOD)
 
@@ -206,7 +211,7 @@ if __name__ == '__main__':
         level=logging.DEBUG,
         format=(
             '%(asctime)s %(levelname)s: %(funcName)s, '
-            'строка № %(lineno)d - %(message)s'
+            'строка %(lineno)d - %(message)s'
         ),
         handlers=[
             logging.StreamHandler(stream=sys.stdout),
