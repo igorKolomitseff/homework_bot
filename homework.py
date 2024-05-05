@@ -15,7 +15,7 @@ from exceptions import (
 
 load_dotenv()
 
-PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
+PRACTICUM_TOKEN =  os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
@@ -44,26 +44,25 @@ SEND_MESSAGE_ERROR = (
 )
 REQUEST_ERROR = (
     'Ошибка запроса к API-сервису Практикум Домашка.\n'
-    'url: {url}.\n'
-    'headers: {headers}.\n'
-    'params: {params}.\n'
+    'url: {url}\n'
+    'headers: {headers}\n'
+    'params: {params}\n'
     'error: {error}'
 )
 STATUS_IS_NOT_OK_ERROR = (
     'Код ответа от API-сервиса Практикум Домашка не 200.\n'
-    'Код ответа: {status_code}.\n'
-    'url: {url}.\n'
-    'headers: {headers}.\n'
-    'params: {params}.\n'
+    'Код ответа: {status_code}\n'
+    'url: {url}\n'
+    'headers: {headers}\n'
+    'params: {params}'
 )
 ERROR_KEYS_IN_RESPONSE = ('code', 'error')
 RESPONSE_HAS_ERROR_KEY_ERROR = (
     'Ответ API содержит ошибку.\n'
-    'url: {url}.\n'
-    'headers: {headers}.\n'
-    'params: {params}.\n'
-    'ключ: {key}.\n'
-    'error: {error}'
+    'url: {url}\n'
+    'headers: {headers}\n'
+    'params: {params}\n'
+    'json: {json}'
 )
 RESPONSE_IS_NOT_DICT_ERROR = (
     'Ответ API не является словарем.\n'
@@ -134,8 +133,7 @@ def get_api_answer(timestamp: int) -> dict:
     for key in ERROR_KEYS_IN_RESPONSE:
         if key in response:
             raise ErrorKeyInResponseError(RESPONSE_HAS_ERROR_KEY_ERROR.format(
-                key=key,
-                error=response.get(key),
+                json=response,
                 **request_parameters
             ))
     return response
