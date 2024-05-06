@@ -62,7 +62,7 @@ RESPONSE_HAS_ERROR_KEY_ERROR = (
     'url: {url}\n'
     'headers: {headers}\n'
     'params: {params}\n'
-    'json: {json}'
+    'ответ API: {response}'
 )
 RESPONSE_IS_NOT_DICT_ERROR = (
     'Ответ API не является словарем.\n'
@@ -133,7 +133,7 @@ def get_api_answer(timestamp: int) -> dict:
     for key in ERROR_KEYS_IN_RESPONSE:
         if key in response:
             raise ErrorKeyInResponseError(RESPONSE_HAS_ERROR_KEY_ERROR.format(
-                json=response,
+                response=response,
                 **request_parameters
             ))
     return response
