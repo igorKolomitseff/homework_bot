@@ -1,4 +1,4 @@
-class NotTokensError(Exception):
+class NoTokensError(Exception):
     """Класс исключения для обработки ошибок проверки переменных окружения."""
 
 

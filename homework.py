@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from telebot import TeleBot
 
 from exceptions import (
-    ErrorKeyInResponseError, NotTokensError, StatusCodeIsNot200Error
+    ErrorKeyInResponseError, NoTokensError, StatusCodeIsNot200Error
 )
 
 
@@ -30,7 +30,7 @@ HOMEWORK_VERDICTS = {
 }
 
 TOKENS = ('PRACTICUM_TOKEN', 'TELEGRAM_TOKEN', 'TELEGRAM_CHAT_ID')
-NOT_TOKENS_ERROR = (
+NO_TOKENS_ERROR = (
     'Отсутствуют обязательные переменные окружения: {tokens}.\n'
     'Программа принудительно остановлена.'
 )
@@ -97,8 +97,8 @@ def check_tokens() -> None:
         token for token in TOKENS if not globals()[token]
     )
     if missing_tokens:
-        logging.critical(NOT_TOKENS_ERROR.format(tokens=missing_tokens))
-        raise NotTokensError(NOT_TOKENS_ERROR.format(tokens=missing_tokens))
+        logging.critical(NO_TOKENS_ERROR.format(tokens=missing_tokens))
+        raise NoTokensError(NO_TOKENS_ERROR.format(tokens=missing_tokens))
 
 
 def send_message(bot: TeleBot, message: str) -> None:
