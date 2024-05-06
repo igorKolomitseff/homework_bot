@@ -40,7 +40,8 @@ SEND_MESSAGE_SUCCESS = (
 )
 SEND_MESSAGE_ERROR = (
     'Сообщение отправить в Telegram не удалось.\n'
-    'Текст сообщения: {message}'
+    'Текст сообщения: {message}\n'
+    'Ошибка: {error}'
 )
 REQUEST_ERROR = (
     'Ошибка запроса к API-сервису Практикум Домашка.\n'
@@ -62,7 +63,8 @@ RESPONSE_HAS_ERROR_KEY_ERROR = (
     'url: {url}\n'
     'headers: {headers}\n'
     'params: {params}\n'
-    'ответ API: {response}'
+    'ключ: {key}\n'
+    'значение: {data}'
 )
 RESPONSE_IS_NOT_DICT_ERROR = (
     'Ответ API не является словарем.\n'
@@ -88,7 +90,7 @@ NEW_STATUS = (
 )
 NO_NEW_STATUS = 'Статус домашней работы не изменился.'
 MAIN_ERROR_MESSAGE = 'Сбой в работе программы: {error}'
-NOT_NEW_ERROR_MESSAGE = 'При новом запросе ошибка не изменилась'
+NO_NEW_ERROR_MESSAGE = 'При новом запросе ошибка не изменилась'
 
 
 def check_tokens() -> None:
@@ -99,13 +101,18 @@ def check_tokens() -> None:
         raise NoTokensError(NO_TOKENS_ERROR.format(tokens=missing_tokens))
 
 
-def send_message(bot: TeleBot, message: str) -> None:
+def send_message(bot: TeleBot, message: str) -> bool:
     """Отправляет сообщение в Telegram-чат."""
     try:
         bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
         logging.debug(SEND_MESSAGE_SUCCESS.format(message=message))
-    except Exception:
-        logging.exception(SEND_MESSAGE_ERROR.format(message=message))
+        return True
+    except Exception as error:
+        logging.exception(SEND_MESSAGE_ERROR.format(
+            message=message,
+            error=error
+        ))
+        return False
 
 
 def get_api_answer(timestamp: int) -> dict:
@@ -131,7 +138,8 @@ def get_api_answer(timestamp: int) -> dict:
     for key in ERROR_KEYS_IN_RESPONSE:
         if key in response:
             raise ErrorKeyInResponseError(RESPONSE_HAS_ERROR_KEY_ERROR.format(
-                response=response,
+                key=key,
+                data=response[key],
                 **request_parameters
             ))
     return response
@@ -173,31 +181,25 @@ def main() -> None:
     check_tokens()
     bot = TeleBot(token=TELEGRAM_TOKEN)
     timestamp = int(time.time())
-    last_status = ''
     last_error = ''
     while True:
         try:
             response = get_api_answer(timestamp)
             check_response(response)
-            homeworks = response.get('homeworks')
-            timestamp = response.get('current_date', timestamp)
+            homeworks = response['homeworks']
             if not homeworks:
                 logging.debug(NO_NEW_STATUS)
                 continue
-            message = parse_status(homeworks[0])
-            if message != last_status:
-                send_message(bot, message)
-                last_status = message
-            else:
-                logging.debug(NO_NEW_STATUS)
+            if send_message(bot, parse_status(homeworks[0])):
+                timestamp = response.get('current_date', timestamp)
         except Exception as error:
             message = MAIN_ERROR_MESSAGE.format(error=error)
             logging.exception(MAIN_ERROR_MESSAGE.format(error=error))
-            if message != last_error:
-                send_message(bot, message)
+            if message == last_error:
+                logging.debug(NO_NEW_ERROR_MESSAGE)
+                continue
+            if send_message(bot, message):
                 last_error = message
-            else:
-                logging.debug(NOT_NEW_ERROR_MESSAGE)
         finally:
             time.sleep(RETRY_PERIOD)
 
