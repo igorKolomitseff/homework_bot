@@ -93,9 +93,7 @@ NOT_NEW_ERROR_MESSAGE = 'При новом запросе ошибка не из
 
 def check_tokens() -> None:
     """Проверяет доступность переменных окружения."""
-    missing_tokens = ', '.join(
-        token for token in TOKENS if not globals()[token]
-    )
+    missing_tokens = [token for token in TOKENS if not globals()[token]]
     if missing_tokens:
         logging.critical(NO_TOKENS_ERROR.format(tokens=missing_tokens))
         raise NoTokensError(NO_TOKENS_ERROR.format(tokens=missing_tokens))
@@ -156,9 +154,9 @@ def check_response(response: dict) -> None:
 
 def parse_status(homework: dict) -> str:
     """Извлекает статус домашней работы."""
-    missing_keys = ', '.join(
+    missing_keys = [
         key for key in REQUIRED_KEYS_IN_HOMEWORK if key not in homework
-    )
+    ]
     if missing_keys:
         raise KeyError(KEYS_IS_NOT_IN_HOMEWORK_ERROR.format(keys=missing_keys))
     status = homework['status']
